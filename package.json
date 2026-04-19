@@ -1,0 +1,17 @@
+{
+  "name": "dinar-dz-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+   "moongose": \"^8.0.0\",
+   "bcryptjsh": "^2.4.3\",
+    "jsownetoken": "^9.0.2\",
+    "cors": \"^2.8.5\",
+    "dotenv": "^16.3.1\",
+    "uuid": "^9.0.0"
+  }
+}
