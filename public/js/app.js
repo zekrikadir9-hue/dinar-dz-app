@@ -342,7 +342,7 @@ function renderCart() {
     return;
   }
   cartItems.innerHTML = cart.map((item, index) => 
-    '<div class="cart-item"><div class="cart-item-info"><h4>' + item.name + '</h4><p>' + item.price + ' د.ج</p></div><button class="cart-item-remove" data-index="' + index + '">&times;</button></div>'
+    '<div class="cart-item"><div class="cart-item-info"><h4>' + item.name + '</h4><p>' + item.price + ' د.ج</p></div><button class="cart-item-remove" data-index="' + index + '">×</button></div>'
   ).join('');
   cartTotal.textContent = cart.reduce((sum, item) => sum + item.price, 0);
   cartItems.querySelectorAll('.cart-item-remove').forEach(btn => {

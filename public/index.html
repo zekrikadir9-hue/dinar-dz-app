@@ -92,6 +92,7 @@
       </div>
     </section>
 
+
     <section id="referralPage" class="page">
       <div class="page-header"><h2><i class="fas fa-share-alt"></i> نظام الإحالة</h2></div>
       <div class="referral-container">
@@ -118,10 +119,10 @@
     </section>
   </main>
 
-  <!-- Auth Modal -->
+  <!-- Modals -->
   <div id="authModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <span class="close-modal">×</span>
       <div class="auth-tabs">
         <button class="auth-tab active" data-tab="login">دخول</button>
         <button class="auth-tab" data-tab="register">تسجيل</button>
@@ -142,10 +143,9 @@
     </div>
   </div>
 
-  <!-- Deposit Modal -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <span class="close-modal">×</span>
       <h3>شحن المحفظة</h3>
       <form id="depositForm">
         <div class="form-group"><label>المبلغ (د.ج)</label><input type="number" id="depositAmount" min="100" step="100" required></div>
@@ -154,10 +154,9 @@
     </div>
   </div>
 
-  <!-- Recharge Modal -->
   <div id="rechargeModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <span class="close-modal">×</span>
       <h3>شحن الهاتف</h3>
       <form id="rechargeForm">
         <div class="form-group"><label>المشغل</label><select id="rechargeOperator" required><option value="">اختر المشغل</option><option value="djezzy">جيزي</option><option value="ooredoo">أوريدو</option><option value="mobilis">موبليس</option></select></div>
@@ -168,10 +167,9 @@
     </div>
   </div>
 
-  <!-- Bill Modal -->
   <div id="billModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <span class="close-modal">×</span>
       <h3>دفع فاتورة</h3>
       <form id="billForm">
         <div class="form-group"><label>نوع الفاتورة</label><select id="billType" required><option value="">اختر النوع</option><option value="electricity">كهرباء</option><option value="gas">غاز</option><option value="water">ماء</option><option value="internet">إنترنت</option></select></div>
@@ -182,10 +180,9 @@
     </div>
   </div>
 
-  <!-- Cart Modal -->
   <div id="cartModal" class="modal">
     <div class="modal-content cart-content">
-      <span class="close-modal">&times;</span>
+      <span class="close-modal">×</span>
       <h3>السلة</h3>
       <div id="cartItems"></div>
       <div class="cart-total"><span>الإجمالي:</span><span id="cartTotal">0</span> د.ج</div>
