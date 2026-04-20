@@ -11,6 +11,7 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
 
+// User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -24,6 +25,7 @@ const userSchema = new mongoose.Schema({
   points: { type: Number, default: 0 },
   referralEarnings: { type: Number, default: 0 },
   level: { type: String, default: 'Bronze' },
+  role: { type: String, default: 'user' },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -43,12 +45,19 @@ const lotterySchema = new mongoose.Schema({
   name: String, description: String, prize: String, participants: [String], winner: String, status: { type: String, default: 'active' }, createdAt: { type: Date, default: Date.now }
 });
 
+const adminSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+});
+
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Product', productSchema);
 const Order = mongoose.model('Order', orderSchema);
 const Transaction = mongoose.model('Transaction', transactionSchema);
 const Lottery = mongoose.model('Lottery', lotterySchema);
+const Admin = mongoose.model('Admin', adminSchema);
 
+// Auth Middleware
 const auth = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -58,6 +67,20 @@ const auth = (req, res, next) => {
     next();
   } catch (e) { res.status(401).json({ error: 'Invalid token' }); }
 };
+
+// Admin Auth Middleware
+const adminAuth = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+    if (decoded.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+    req.adminId = decoded.adminId;
+    next();
+  } catch (e) { res.status(401).json({ error: 'Invalid token' }); }
+};
+
+// ============ AUTH ROUTES ============
 
 app.post('/api/register', async (req, res) => {
   try {
@@ -96,6 +119,19 @@ app.post('/api/login', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin Login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username });
+    if (!admin) return res.status(400).json({ error: 'Invalid credentials' });
+    const valid = await bcrypt.compare(password, admin.password);
+    if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ adminId: admin._id, role: 'admin' }, process.env.JWT_SECRET || 'secret123');
+    res.json({ token, admin: { id: admin._id, username: admin.username } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -103,6 +139,7 @@ app.get('/api/user', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ MINING ROUTES ============
 app.post('/api/mining/start', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -126,6 +163,7 @@ app.post('/api/mining/claim', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ PRODUCTS ROUTES ============
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find({ isActive: true });
@@ -133,7 +171,7 @@ app.get('/api/products', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', adminAuth, async (req, res) => {
   try {
     const { name, description, price, category, image, stock } = req.body;
     const product = new Product({ name, description, price, category, image, stock });
@@ -142,13 +180,14 @@ app.post('/api/products', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', adminAuth, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ ORDER ROUTES ============
 app.post('/api/order', auth, async (req, res) => {
   try {
     const { products, total } = req.body;
@@ -175,6 +214,7 @@ app.post('/api/order', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ WALLET ROUTES ============
 app.post('/api/wallet/deposit', auth, async (req, res) => {
   try {
     const { amount } = req.body;
@@ -194,6 +234,7 @@ app.get('/api/transactions', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ RECHARGE & BILLS ============
 app.post('/api/recharge', auth, async (req, res) => {
   try {
     const { phoneNumber, amount, operator } = req.body;
@@ -220,6 +261,7 @@ app.post('/api/bill/pay', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ LOTTERY ROUTES ============
 app.get('/api/lottery', async (req, res) => {
   try {
     const lotteries = await Lottery.find({ status: 'active' });
@@ -239,7 +281,7 @@ app.post('/api/lottery/join', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/lottery/create', async (req, res) => {
+app.post('/api/lottery/create', adminAuth, async (req, res) => {
   try {
     const { name, description, prize } = req.body;
     const lottery = new Lottery({ name, description, prize });
@@ -248,7 +290,7 @@ app.post('/api/lottery/create', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/lottery/draw', async (req, res) => {
+app.post('/api/lottery/draw', adminAuth, async (req, res) => {
   try {
     const { lotteryId } = req.body;
     const lottery = await Lottery.findById(lotteryId);
@@ -261,14 +303,15 @@ app.post('/api/lottery/draw', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/users', async (req, res) => {
+// ============ ADMIN ROUTES (PROTECTED) ============
+app.get('/api/admin/users', adminAuth, async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/orders', async (req, res) => {
+app.get('/api/admin/orders', adminAuth, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -284,7 +327,16 @@ app.get('/api/stats', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============ SEED DATA ============
 const seedData = async () => {
+  // Create default admin if not exists
+  const adminExists = await Admin.countDocuments();
+  if (adminExists === 0) {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    await Admin.create({ username: 'admin', password: hashedPassword });
+    console.log('Default admin created: admin / admin123');
+  }
+
   const productCount = await Product.countDocuments();
   if (productCount === 0) {
     const products = [
@@ -302,6 +354,7 @@ const seedData = async () => {
     await Product.insertMany(products);
     console.log('Products seeded!');
   }
+
   const lotteryCount = await Lottery.countDocuments();
   if (lotteryCount === 0) {
     const lotteries = [
