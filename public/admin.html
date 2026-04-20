@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinarDZ - لوحة الأدمن</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .admin-stat { background: var(--card-bg); padding: 20px; border-radius: 15px; text-align: center; }
+    .admin-stat h3 { color: var(--text-muted); font-size: 0.9rem; }
+    .admin-stat .number { font-size: 2rem; font-weight: bold; color: var(--accent); }
+    .admin-section { background: var(--card-bg); padding: 25px; border-radius: 15px; margin-bottom: 20px; }
+    .admin-section h2 { color: var(--accent); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); }
+    .data-table th { color: var(--text-muted); }
+    .data-table tr:hover { background: var(--secondary); }
+    .btn-action { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; }
+    .btn-delete { background: var(--accent); color: #fff; }
+    .btn-draw { background: var(--success); color: #000; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 12px; background: var(--secondary); border: 2px solid var(--border); border-radius: 8px; color: var(--text); }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 10px 20px; background: var(--secondary); border: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+    .tab.active { background: var(--accent); color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; }
+    .badge-bronze { background: #cd7f32; color: #fff; }
+    .badge-silver { background: #c0c0c0; color: #000; }
+    .badge-gold { background: #ffd700; color: #000; }
+    .badge-diamond { background: #b9f2ff; color: #000; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><i class="fas fa-coins"></i> <span>DinarDZ</span></div>
+    <nav><a href="/" class="nav-btn"><i class="fas fa-home"></i> الرئيسية</a></nav>
+  </header>
+  <main class="admin-container">
+    <div class="admin-header">
+      <h1><i class="fas fa-cog"></i> لوحة الأدمن</h1>
+      <button class="btn-action btn-draw" onclick="refreshData()"><i class="fas fa-sync"></i> تحديث</button>
+    </div>
+    <div class="admin-stats">
+      <div class="admin-stat"><h3>المستخدمين</h3><div class="number" id="statUsers">0</div></div>
+      <div class="admin-stat"><h3>المنتجات</h3><div class="number" id="statProducts">0</div></div>
+      <div class="admin-stat"><h3>الطلبات</h3><div class="number" id="statOrders">0</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="users">المستخدمين</button>
+      <button class="tab" data-tab="products">المنتجات</button>
+      <button class="tab" data-tab="orders">الطلبات</button>
+      <button class="tab" data-tab="lottery">السحوبات</button>
+      <button class="tab" data-tab="add-product">إضافة منتج</button>
+      <button class="tab" data-tab="add-lottery">إضافة سحب</button>
+    </div>
+    <div class="tab-content active" id="usersTab">
+      <div class="admin-section"><h2>قائمة المستخدمين</h2><table class="data-table"><thead><tr><th>الاسم</th><th>البريد</th><th>كود الإحالة</th><th>الرصيد</th><th>الأرباح</th><th>المستوى</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+    </div>
+    <div class="tab-content" id="productsTab">
+      <div class="admin-section"><h2>قائمة المنتجات</h2><table class="data-table"><thead><tr><th>الاسم</th><th>الفئة</th><th>السعر</th><th>المخزون</th><th>إجراءات</th></tr></thead><tbody id="productsTable"></tbody></table></div>
+    </div>
+    <div class="tab-content" id="ordersTab">
+      <div class="admin-section"><h2>الطلبات</h2><table class="data-table"><thead><tr><th>رقم الطلب</th><th>المستخدم</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
+    </div>
+    <div class="tab-content" id="lotteryTab">
+      <div class="admin-section"><h2>السحوبات</h2><table class="data-table"><thead><tr><th>الاسم</th><th>الجائزة</th><th>المشاركين</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="lotteryTable"></tbody></table></div>
+    </div>
+    <div class="tab-content" id="add-productTab">
+      <div class="admin-section"><h2>إضافة منتج جديد</h2><form id="addProductForm"><div class="form-row"><div><label>اسم المنتج</label><input type="text" name="name" required></div><div><label>الفئة</label><select name="category" required><option value="phone">هاتف</option><option value="accessory">إكسسوار</option><option value="gift_card">بطاقة هدايا</option></select></div></div><div class="form-row"><div><label>السعر (د.ج)</label><input type="number" name="price" required></div><div><label>المخزون</label><input type="number" name="stock" value="100" required></div></div><div class="form-row"><div><label>رابط الصورة</label><input type="url" name="image"></div></div><div class="form-row"><div><label>الوصف</label><textarea name="description" rows="3"></textarea></div></div><button type="submit" class="btn-action btn-draw"><i class="fas fa-plus"></i> إضافة</button></form></div>
+    </div>
+    <div class="tab-content" id="add-lotteryTab">
+      <div class="admin-section"><h2>إضافة سحب جديد</h2><form id="addLotteryForm"><div class="form-row"><div><label>اسم السحب</label><input type="text" name="name" required></div><div><label>الجائزة</label><input type="text" name="prize" required></div></div><div class="form-row"><div><label>الوصف</label><textarea name="description" rows="3"></textarea></div></div><button type="submit" class="btn-action btn-draw"><i class="fas fa-plus"></i> إضافة</button></form></div>
+    </div>
+  </main>
+  <script>
+    let token = localStorage.getItem('adminToken') || '';
+    if (!token) { const code = prompt('أدخل كود الأدمن:'); if (code === 'admin123') { token = 'admin'; localStorage.setItem('adminToken', token); } else { alert('كود غير صحيح!'); window.location.href = '/'; } }
+    document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.tab + 'Tab').classList.add('active'); }); });
+    async function refreshData() { await Promise.all([loadStats(), loadUsers(), loadProducts(), loadOrders(), loadLotteries()]); }
+    async function loadStats() { try { const res = await fetch('/api/stats'); const data = await res.json(); document.getElementById('statUsers').textContent = data.users; document.getElementById('statProducts').textContent = data.products; document.getElementById('statOrders').textContent = data.orders; } catch (e) {} }
+    async function loadUsers() { try { const res = await fetch('/api/admin/users'); const users = await res.json(); document.getElementById('usersTable').innerHTML = users.map(u => '<tr><td>'+u.username+'</td><td>'+u.email+'</td><td><code>'+u.referralCode+'</code></td><td>'+u.wallet+' د.ج</td><td>'+u.referralEarnings+' د.ج</td><td><span class="badge badge-'+u.level.toLowerCase()+'">'+u.level+'</span></td></tr>').join(''); } catch (e) {} }
+    async function loadProducts() { try { const res = await fetch('/api/products'); const products = await res.json(); document.getElementById('productsTable').innerHTML = products.map(p => '<tr><td>'+p.name+'</td><td>'+p.category+'</td><td>'+p.price+' د.ج</td><td>'+p.stock+'</td><td><button class="btn-action btn-delete" onclick="deleteProduct(\"'+p._id+'\")"><i class="fas fa-trash"></i></button></td></tr>').join(''); } catch (e) {} }
+    async function loadOrders() { try { const res = await fetch('/api/admin/orders'); const orders = await res.json(); document.getElementById('ordersTable').innerHTML = orders.map(o => '<tr><td>'+o._id.slice(-8)+'</td><td>'+o.userId+'</td><td>'+o.total+' د.ج</td><td>'+o.status+'</td></tr>').join(''); } catch (e) {} }
+    async function loadLotteries() { try { const res = await fetch('/api/lottery'); const lotteries = await res.json(); document.getElementById('lotteryTable').innerHTML = lotteries.map(l => '<tr><td>'+l.name+'</td><td>'+l.prize+'</td><td>'+l.participants.length+'</td><td>'+(l.status==='active'?'نشط':'منتهي')+'</td><td>'+(l.status==='active'?'<button class="btn-action btn-draw" onclick="drawLottery(\"'+l._id+'\")"><i class="fas fa-trophy"></i> سحب</button>':l.winner||'-')+'</td></tr>').join(''); } catch (e) {} }
+    document.getElementById('addProductForm').addEventListener('submit', async (e) => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.target)); data.price = parseInt(data.price); data.stock = parseInt(data.stock); try { const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('تمت إضافة المنتج!'); e.target.reset(); refreshData(); } } catch (e) {} });
+    document.getElementById('addLotteryForm').addEventListener('submit', async (e) => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.target)); try { const res = await fetch('/api/lottery/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('تمت إضافة السحب!'); e.target.reset(); refreshData(); } } catch (e) {} });
+    async function deleteProduct(id) { if (confirm('حذف المنتج؟')) { try { await fetch('/api/products/'+id, { method: 'DELETE' }); refreshData(); } catch (e) {} } }
+    async function drawLottery(id) { if (confirm('سحب الفائز؟')) { try { const res = await fetch('/api/lottery/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lotteryId: id }) }); const data = await res.json(); if (res.ok) { alert('الفائز: '+data.winner); refreshData(); } } catch (e) {} } }
+    refreshData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinarDZ - التعدين والمتجر</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="logo"><i class="fas fa-coins"></i> <span>DinarDZ</span></div>
+    <nav>
+      <button class="nav-btn active" data-page="home"><i class="fas fa-home"></i> الرئيسية</button>
+      <button class="nav-btn" data-page="mining"><i class="fas fa-hammer"></i> التعدين</button>
+      <button class="nav-btn" data-page="shop"><i class="fas fa-store"></i> المتجر</button>
+      <button class="nav-btn" data-page="wallet"><i class="fas fa-wallet"></i> المحفظة</button>
+      <button class="nav-btn" data-page="referral"><i class="fas fa-share-alt"></i> الإحالة</button>
+      <button class="nav-btn" data-page="lottery"><i class="fas fa-ticket-alt"></i> السحوبات</button>
+    </nav>
+    <div class="user-info" id="userInfo" style="display: none;">
+      <span class="wallet-display"><i class="fas fa-wallet"></i> <span id="headerWallet">0</span> د.ج</span>
+      <button id="logoutBtn" class="btn-logout">خروج</button>
+    </div>
+    <button class="login-btn" id="loginBtn">دخول / تسجيل</button>
+  </header>
+
+  <main id="mainContent">
+    <section id="homePage" class="page active">
+      <div class="hero">
+        <h1>مرحباً بك في DinarDZ</h1>
+        <p>منصتك الشاملة للتعدين والمتجر والإحالات</p>
+        <div class="hero-stats">
+          <div class="stat-box"><i class="fas fa-users"></i><span id="totalUsers">0</span><p>المستخدمين</p></div>
+          <div class="stat-box"><i class="fas fa-boxes"></i><span id="totalProducts">0</span><p>المنتجات</p></div>
+          <div class="stat-box"><i class="fas fa-shopping-cart"></i><span id="totalOrders">0</span><p>الطلبات</p></div>
+        </div>
+      </div>
+      <div class="features">
+        <div class="feature-card"><i class="fas fa-hammer"></i><h3>التعدين</h3><p>اربح عملات كل يوم</p></div>
+        <div class="feature-card"><i class="fas fa-store"></i><h3>متجر متكامل</h3><p>هواتف وإكسسوارات وبطاقات هدايا</p></div>
+        <div class="feature-card"><i class="fas fa-share-alt"></i><h3>نظام إحالة</h3><p>اربح بنسبة 10% من كل إحالة</p></div>
+        <div class="feature-card"><i class="fas fa-ticket-alt"></i><h3>سحوبات حصرية</h3><p>فوز بهواتف ورصيد مجاني</p></div>
+      </div>
+    </section>
+
+    <section id="miningPage" class="page">
+      <div class="page-header"><h2><i class="fas fa-hammer"></i> التعدين</h2></div>
+      <div class="mining-container">
+        <div class="mining-card">
+          <div class="mining-icon"><i class="fas fa-bitcoin"></i></div>
+          <h3>ابدأ التعدين الآن</h3>
+          <p class="mining-balance">رصيد التعدين: <span id="miningBalance">0</span> عملة</p>
+          <button id="startMiningBtn" class="btn-mining">بدء التعدين</button>
+          <button id="claimMiningBtn" class="btn-claim">سحب الرصيد</button>
+        </div>
+        <div class="mining-info">
+          <h4>كيف يعمل التعدين؟</h4>
+          <ul>
+            <li>اضغط "بدء التعدين" كل يوم</li>
+            <li>اربح بين 5-15 عملة</li>
+            <li>اسحب الرصيد إلى محفظتك</li>
+            <li>استخدم الرصيد في المتجر</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="shopPage" class="page">
+      <div class="page-header">
+        <h2><i class="fas fa-store"></i> المتجر</h2>
+        <div class="shop-filter">
+          <button class="filter-btn active" data-category="all">الكل</button>
+          <button class="filter-btn" data-category="phone">هواتف</button>
+          <button class="filter-btn" data-category="accessory">إكسسوارات</button>
+          <button class="filter-btn" data-category="gift_card">بطاقات هدايا</button>
+        </div>
+      </div>
+      <div class="products-grid" id="productsGrid"></div>
+    </section>
+
+    <section id="walletPage" class="page">
+      <div class="page-header"><h2><i class="fas fa-wallet"></i> المحفظة</h2></div>
+      <div class="wallet-container">
+        <div class="wallet-balance"><h3>رصيد المحفظة</h3><div class="balance-amount"><span id="walletBalance">0</span> د.ج</div></div>
+        <div class="wallet-actions">
+          <button id="depositBtn" class="btn-wallet"><i class="fas fa-plus"></i> شحن</button>
+          <button id="rechargePhoneBtn" class="btn-wallet"><i class="fas fa-mobile-alt"></i> شحن هاتف</button>
+          <button id="payBillBtn" class="btn-wallet"><i class="fas fa-file-invoice"></i> دفع فاتورة</button>
+        </div>
+        <div class="transactions-list"><h3>سجل المعاملات</h3><div id="transactionsList"></div></div>
+      </div>
+    </section>
+
+    <section id="referralPage" class="page">
+      <div class="page-header"><h2><i class="fas fa-share-alt"></i> نظام الإحالة</h2></div>
+      <div class="referral-container">
+        <div class="referral-card">
+          <div class="referral-code-box"><p>كود الإحالة الخاص بك</p>
+            <div class="code-display"><span id="myReferralCode">------</span><button id="copyCodeBtn" class="btn-copy"><i class="fas fa-copy"></i> نسخ</button></div>
+          </div>
+          <div class="referral-stats">
+            <div class="ref-stat"><span id="referralsCount">0</span><p>عدد الإحالات</p></div>
+            <div class="ref-stat"><span id="referralEarnings">0</span><p>الأرباح (د.ج)</p></div>
+            <div class="ref-stat"><span id="userLevel">Bronze</span><p>المستوى</p></div>
+          </div>
+        </div>
+        <div class="referral-info">
+          <h4>مميزات نظام الإحالة</h4>
+          <ul><li>اربح <strong>50 د.ج</strong> لكل صديق يسجل بكودك</li><li>اربح <strong>10%</strong> من كل عملية شراء للمُحال</li><li>ترقي إلى مستويات أعلى</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="lotteryPage" class="page">
+      <div class="page-header"><h2><i class="fas fa-ticket-alt"></i> السحوبات</h2></div>
+      <div class="lottery-container"><div class="lotteries-grid" id="lotteriesGrid"></div></div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">×</span>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">دخول</button>
+        <button class="auth-tab" data-tab="register">تسجيل</button>
+      </div>
+      <form id="loginForm" class="auth-form">
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" required></div>
+        <div class="form-group"><label>كلمة المرور</label><input type="password" id="loginPassword" required></div>
+        <button type="submit" class="btn-submit">دخول</button>
+      </form>
+      <form id="registerForm" class="auth-form" style="display: none;">
+        <div class="form-group"><label>اسم المستخدم</label><input type="text" id="registerUsername" required></div>
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="registerEmail" required></div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="registerPhone"></div>
+        <div class="form-group"><label>كلمة المرور</label><input type="password" id="registerPassword" required></div>
+        <div class="form-group"><label>كود الإحالة (اختياري)</label><input type="text" id="registerReferralCode"></div>
+        <button type="submit" class="btn-submit">تسجيل</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="depositModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">×</span>
+      <h3>شحن المحفظة</h3>
+      <form id="depositForm">
+        <div class="form-group"><label>المبلغ (د.ج)</label><input type="number" id="depositAmount" min="100" step="100" required></div>
+        <button type="submit" class="btn-submit">شحن</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="rechargeModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">×</span>
+      <h3>شحن الهاتف</h3>
+      <form id="rechargeForm">
+        <div class="form-group"><label>المشغل</label><select id="rechargeOperator" required><option value="">اختر المشغل</option><option value="djezzy">جيزي</option><option value="ooredoo">أوريدو</option><option value="mobilis">موبليس</option></select></div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="rechargePhone" required></div>
+        <div class="form-group"><label>المبلغ (د.ج)</label><select id="rechargeAmount" required><option value="500">500 د.ج</option><option value="1000">1000 د.ج</option><option value="2000">2000 د.ج</option><option value="5000">5000 د.ج</option><option value="10000">10000 د.ج</option></select></div>
+        <button type="submit" class="btn-submit">شحن</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="billModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">×</span>
+      <h3>دفع فاتورة</h3>
+      <form id="billForm">
+        <div class="form-group"><label>نوع الفاتورة</label><select id="billType" required><option value="">اختر النوع</option><option value="electricity">كهرباء</option><option value="gas">غاز</option><option value="water">ماء</option><option value="internet">إنترنت</option></select></div>
+        <div class="form-group"><label>رقم الفاتورة</label><input type="text" id="billNumber" required></div>
+        <div class="form-group"><label>المبلغ (د.ج)</label><input type="number" id="billAmount" min="100" required></div>
+        <button type="submit" class="btn-submit">دفع</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="cartModal" class="modal">
+    <div class="modal-content cart-content">
+      <span class="close-modal">×</span>
+      <h3>السلة</h3>
+      <div id="cartItems"></div>
+      <div class="cart-total"><span>الإجمالي:</span><span id="cartTotal">0</span> د.ج</div>
+      <button id="checkoutBtn" class="btn-submit">شراء</button>
+    </div>
+  </div>
+
+  <button id="cartBtn" class="cart-btn" style="display: none;"><i class="fas fa-shopping-cart"></i><span id="cartCount">0</span></button>
+
+
+  <script src="js/app.js"></script>
+</body>
+</html>
