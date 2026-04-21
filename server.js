@@ -11,186 +11,196 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
 
-// ============ 1. MODELS (قواعد البيانات) ============
+// ============ 1. Models (قواعد البيانات) ============
 
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    phone: String,
     wallet: { type: Number, default: 0 },
     miningBalance: { type: Number, default: 0 },
     
     // نظام التعدين المطور
-    miningMultiplier: { type: Number, default: 1 }, // 1 للربح العادي، يزداد عند شراء باقة
+    miningMultiplier: { type: Number, default: 1 }, 
     miningPlanActive: { type: Boolean, default: false },
     planExpiresAt: { type: Date, default: null },
     lastMiningClaim: { type: Date, default: Date.now },
     
     referralCode: { type: String, unique: true },
-    referredBy: String,
     role: { type: String, default: 'user' },
     createdAt: { type: Date, default: Date.now }
 });
 
-const depositSchema = new mongoose.Schema({
+const Deposit = mongoose.model('Deposit', new mongoose.Schema({
     userId: mongoose.Schema.Types.ObjectId,
     username: String,
     amount: Number,
-    receiptImage: String, // رابط الصورة المرفوعة للوصل
-    status: { type: String, default: 'pending' }, // pending, approved, rejected
-    createdAt: { type: Date, default: Date.now }
-});
-
-const User = mongoose.model('User', userSchema);
-const Deposit = mongoose.model('Deposit', depositSchema);
-const Transaction = mongoose.model('Transaction', new mongoose.Schema({
-    userId: mongoose.Schema.Types.ObjectId,
-    type: String,
-    amount: Number,
-    description: String,
+    receiptImage: String, 
+    status: { type: String, default: 'pending' }, 
     createdAt: { type: Date, default: Date.now }
 }));
 
-// ============ 2. MIDDLEWARES (الحماية) ============
+const User = mongoose.model('User', userSchema);
 
-const auth = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'يرجى تسجيل الدخول' });
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'premium_secret_777');
-        req.userId = decoded.userId;
-        req.userRole = decoded.role;
-        next();
-    } catch (e) { res.status(401).json({ error: 'جلسة غير صالحة' }); }
-};
+// ============ 2. Logic (وظائف الحساب التلقائي) ============
 
-// ============ 3. HELPER FUNCTIONS (وظائف مساعدة) ============
-
-// تحديث التعدين التلقائي وفحص انتهاء الباقة
-const updateMiningState = async (user) => {
+// تحديث حالة التعدين (تلقائي كل ساعتين)
+const processMining = async (user) => {
     const now = new Date();
-    let updated = false;
+    let isModified = false;
 
-    // 1. فحص انتهاء باقة الـ 7 أيام
+    // 1. تحقق من انتهاء باقة الـ 7 أيام
     if (user.miningPlanActive && user.planExpiresAt && now > user.planExpiresAt) {
         user.miningPlanActive = false;
         user.miningMultiplier = 1;
         user.planExpiresAt = null;
-        updated = true;
+        isModified = true;
     }
 
-    // 2. حساب الأرباح التلقائية (كل ساعتين)
+    // 2. حساب الأرباح بناءً على الوقت المنقضي
     const msPassed = now - user.lastMiningClaim;
     const hoursPassed = msPassed / (1000 * 60 * 60);
 
     if (hoursPassed >= 2) {
         const periods = Math.floor(hoursPassed / 2);
-        const baseReward = 10; // الربح الأساسي كل ساعتين
-        const totalEarned = periods * baseReward * user.miningMultiplier;
-
-        user.miningBalance += totalEarned;
-        // تحديث الوقت لآخر فترة محسوبة
+        const rewardPerPeriod = 10; // الربح الأساسي كل ساعتين
+        user.miningBalance += periods * rewardPerPeriod * user.miningMultiplier;
+        
+        // تحديث الوقت لآخر فترة تم احتسابها
         user.lastMiningClaim = new Date(user.lastMiningClaim.getTime() + periods * 2 * 60 * 60 * 1000);
-        updated = true;
+        isModified = true;
     }
 
-    if (updated) await user.save();
+    if (isModified) await user.save();
     return user;
 };
 
-// ============ 4. ROUTES (المسارات) ============
+// ============ 3. Middleware (التوثيق) ============
 
-// تسجيل الدخول وجلب البيانات مع تحديث الحالة
+const auth = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'غير مصرح لك، يرجى تسجيل الدخول' });
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        req.userId = decoded.userId;
+        req.userRole = decoded.role;
+        next();
+    } catch (e) { res.status(401).json({ error: 'جلسة منتهية' }); }
+};
+
+// ============ 4. Routes (المسارات) ============
+
+// تسجيل مستخدم جديد
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, email, password, phone, referralCode } = req.body;
+        
+        const existing = await User.findOne({ $or: [{ email }, { username }] });
+        if (existing) return res.status(400).json({ error: 'المستخدم أو البريد موجود مسبقاً' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword,
+            phone,
+            referralCode: uuidv4().slice(0, 8).toUpperCase()
+        });
+
+        await newUser.save();
+        const token = jwt.sign({ userId: newUser._id, role: newUser.role }, process.env.JWT_SECRET || 'secret123');
+        res.json({ token, user: { username: newUser.username } });
+    } catch (e) { res.status(500).json({ error: 'خطأ أثناء التسجيل' }); }
+});
+
+// تسجيل الدخول
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(400).json({ error: 'بيانات الدخول غير صحيحة' });
+        }
+        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123');
+        res.json({ token, user: { username: user.username, role: user.role } });
+    } catch (e) { res.status(500).json({ error: 'خطأ في السيرفر' }); }
+});
+
+// جلب بيانات المستخدم مع تحديث التعدين تلقائياً
 app.get('/api/user/me', auth, async (req, res) => {
     try {
         let user = await User.findById(req.userId);
-        user = await updateMiningState(user); // تحديث التعدين فوراً عند طلب البيانات
+        user = await processMining(user);
         
         res.json({
             username: user.username,
             wallet: user.wallet,
             miningBalance: user.miningBalance,
-            miningMultiplier: user.miningMultiplier,
             isPlanActive: user.miningPlanActive,
-            planExpires: user.planExpiresAt,
-            referralCode: user.referralCode
+            multiplier: user.miningMultiplier,
+            expiry: user.planExpiresAt
         });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// إرسال طلب إيداع يدوي (وصل الدفع)
+// طلب شحن رصيد (يدوي)
 app.post('/api/deposit/request', auth, async (req, res) => {
     try {
         const { amount, receiptImage } = req.body;
         const user = await User.findById(req.userId);
         
-        const request = new Deposit({
+        const dep = new Deposit({
             userId: user._id,
             username: user.username,
             amount,
             receiptImage
         });
-        
-        await request.save();
-        res.json({ message: 'تم استلام طلبك، سيتم شحن رصيدك بعد مراجعة الوصل' });
+        await dep.save();
+        res.json({ message: 'تم إرسال الطلب للمراجعة' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// شراء باقة التعدين لمدة 7 أيام
+// شراء باقة التعدين (7 أيام)
 app.post('/api/mining/buy-plan', auth, async (req, res) => {
     try {
         const user = await User.findById(req.userId);
-        const PLAN_PRICE = 5000; // سعر الباقة مثال 5000 دينار
+        const PRICE = 5000; // سعر الباقة
 
-        if (user.wallet < PLAN_PRICE) {
-            return res.status(400).json({ error: 'رصيد المحفظة غير كافٍ، اشحن أولاً' });
-        }
+        if (user.wallet < PRICE) return res.status(400).json({ error: 'رصيدك غير كافٍ' });
 
-        user.wallet -= PLAN_PRICE;
-        user.miningMultiplier = 5; // الباقة تعطي 5 أضعاف الربح
+        user.wallet -= PRICE;
+        user.miningMultiplier = 5; // مضاعفة الربح
         user.miningPlanActive = true;
         
-        const expiry = new Date();
-        expiry.setDate(expiry.getDate() + 7); // إضافة 7 أيام
+        let expiry = new Date();
+        expiry.setDate(expiry.getDate() + 7);
         user.planExpiresAt = expiry;
 
         await user.save();
-        
-        const trans = new Transaction({
-            userId: user._id,
-            type: 'purchase',
-            amount: PLAN_PRICE,
-            description: 'شراء باقة تعدين 7 أيام'
-        });
-        await trans.save();
-
-        res.json({ success: true, message: 'تم تفعيل باقة الـ 7 أيام بنجاح!' });
+        res.json({ success: true, message: 'تم تفعيل الباقة بنجاح' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// جمع أرباح التعدين إلى المحفظة
+// جمع أرباح التعدين للمحفظة
 app.post('/api/mining/claim', auth, async (req, res) => {
     try {
         const user = await User.findById(req.userId);
-        if (user.miningBalance <= 0) return res.status(400).json({ error: 'لا يوجد أرباح لجمعها' });
+        if (user.miningBalance <= 0) return res.status(400).json({ error: 'لا يوجد رصيد لجمعه' });
 
-        const amount = user.miningBalance;
-        user.wallet += amount;
+        user.wallet += user.miningBalance;
         user.miningBalance = 0;
         await user.save();
-
-        res.json({ success: true, newWallet: user.wallet });
+        res.json({ success: true, wallet: user.wallet });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ============ 5. SERVER INIT ============
+// ============ 5. Start ============
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dinar-dz';
 
-mongoose.connect(MONGO_URI)
-    .then(() => {
-        console.log('✅ Database Connected');
-        app.listen(PORT, () => console.log(`🚀 Professional Server on port ${PORT}`));
-    })
-    .catch(err => console.error('❌ Error:', err));
+mongoose.connect(MONGO_URI).then(() => {
+    console.log('✅ Connected to MongoDB');
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}).catch(err => console.error(err));
